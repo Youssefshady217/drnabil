@@ -55,28 +55,36 @@ if uploaded_file:
                     table_data.append(row)
 
     # استخراج بيانات العميل
-    client_name = ""
+    first_name = ""
+    last_name = ""
     client1_name = ""
     insurance_company = ""
     dispensed_date = ""
+    import re
 
-    for line in full_text.split("\n"):
+    lines = full_text.split("\n")
+    for i, line in enumerate(lines):
+    # مطابقة First Name
         if "First Name" in line:
-            parts = line.split(":")
-            if len(parts) > 1:
-                client_name = parts[1].strip()
+            match = re.search(r"First Name\s*:\s*(\S+)", line)
+            if match:
+                first_name = match.group(1).strip()
+
+    # مطابقة Last Name
         if "Last Name" in line:
-            parts = line.split(":")
-            if len(parts) > 1:
-                client1_name = client_name + " " + parts[1].strip()
+            match = re.search(r"Last Name\s*:\s*(\S+)", line)
+            if match:
+               last_name = match.group(1).strip()
+
         if "Insurance Company" in line:
             parts = line.split(":")
             if len(parts) > 1:
                 insurance_company = parts[1].strip()
         if "Service Date" in line:
-            parts = line.split(":")
-            if len(parts) > 1:
-                dispensed_date = parts[1].strip()
+            match = re.search(r"Service Date\s*:\s*(\d{2}/\d{2}/\d{4})", line)
+            if match:
+                dispensed_date = match.group(1)
+    client1_name = f"{last_name} {first_name}".strip()
 
     df = pd.DataFrame(table_data)
 
@@ -96,7 +104,6 @@ if uploaded_file:
         if all(col in df.columns for col in required_cols):
             df = df[df["Status"].str.contains("Approved", na=False)]
 
-            df["Quantity"] = df["Quantity"].str.extract(r"(\d+\.?\d*)").astype(float)
             df["Price (per\npackage)"] = df["Price (per\npackage)"].str.extract(r"(\d+\.?\d*)").astype(float)
             df["Total\nPrice"] = df["Total\nPrice"].str.extract(r"(\d+\.?\d*)").astype(float)
 
@@ -149,9 +156,11 @@ if uploaded_file:
                 pdf.set_font("Amiri", "", 11)
 
                 # بيانات العميل
-                pdf.cell(0, 10, reshape_arabic("اسم العميل: " ), ln=1, align="R")
-                pdf.cell(0, 10, reshape_arabic("شركة التأمين: " ), ln=1, align="R")
-                pdf.cell(0, 10, reshape_arabic("التاريخ: " ), ln=1, align="R")
+                reshaped1_name = reshape_arabic(client1_name)
+                reshaped_label = reshape_arabic("اسم العميل: ")
+                pdf.cell(0, 10, client1_name + reshaped_label , ln=1, align="R")
+                pdf.cell(0, 10, reshape_arabic("شركة التأمين: شركة مصر للتامين " ), ln=1, align="R")
+                pdf.cell(0, 10, reshape_arabic("التاريخ: " + dispensed_date), ln=1, align="R")
                 pdf.ln(5)
 
                 # رأس الجدول
