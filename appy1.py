@@ -201,6 +201,9 @@ if uploaded_file:
 
                 # حفظ PDF في ذاكرة مؤقتة
                 pdf_output = pdf.output(dest='S')
+                if isinstance(pdf_output, str):
+                    pdf_output = pdf_output.encode('latin-1')
+
                 pdf_buffer = BytesIO(pdf_output)
 
                 base_name = os.path.splitext(uploaded_file.name)[0]
